@@ -148,182 +148,111 @@ CREATE TABLE AUTHORED_BY (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-DELIMITER $$
 CREATE TRIGGER prevent_student_mentoring_faculty
 BEFORE UPDATE ON MEMBER
 FOR EACH ROW
+WHEN NEW.mentorID IS NOT NULL 
+    AND EXISTS (SELECT 1 FROM STUDENT WHERE memID = NEW.mentorID)
+    AND EXISTS (SELECT 1 FROM FACULTY WHERE memID = NEW.memID)
 BEGIN
-    IF NEW.mentorID IS NOT NULL THEN
-        IF EXISTS (SELECT 1 FROM STUDENT WHERE memID = NEW.mentorID) 
-           AND EXISTS (SELECT 1 FROM FACULTY WHERE memID = NEW.memID) THEN
-            SIGNAL SQLSTATE '45000'
-                SET MESSAGE_TEXT = 'A STUDENT cannot mentor a FACULTY member';
-        END IF;
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'A STUDENT cannot mentor a FACULTY member');
+END;
 
-DELIMITER $$
 CREATE TRIGGER faculty_prefix_check
 BEFORE INSERT ON FACULTY
 FOR EACH ROW
+WHEN SUBSTR(NEW.memID, 1, 1) <> 'f'
 BEGIN
-    IF SUBSTRING(NEW.memID, 1, 1) <> 'f' THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'FACULTY memID must start with f';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'FACULTY memID must start with f');
+END;
 
-DELIMITER $$
 CREATE TRIGGER student_prefix_check
 BEFORE INSERT ON STUDENT
 FOR EACH ROW
+WHEN SUBSTR(NEW.memID, 1, 1) <> 's'
 BEGIN
-    IF SUBSTRING(NEW.memID, 1, 1) <> 's' THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'STUDENT memID must start with s';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'STUDENT memID must start with s');
+END;
 
-DELIMITER $$
 CREATE TRIGGER extcollab_prefix_check
 BEFORE INSERT ON EXTCOLLAB
 FOR EACH ROW
+WHEN SUBSTR(NEW.memID, 1, 1) <> 'e'
 BEGIN
-    IF SUBSTRING(NEW.memID, 1, 1) <> 'e' THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'EXTCOLLAB memID must start with e';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'EXTCOLLAB memID must start with e');
+END;
 
-DELIMITER $$
 CREATE TRIGGER check_member_has_project_student
 AFTER INSERT ON STUDENT
 FOR EACH ROW
+WHEN (SELECT COUNT(*) FROM WORK_ON WHERE memID = NEW.memID) = 0
 BEGIN
-    DECLARE project_count INT;
-    SELECT COUNT(*) INTO project_count 
-    FROM WORK_ON 
-    WHERE memID = NEW.memID;
-    
-    IF project_count = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Member must be assigned to at least one project';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'Member must be assigned to at least one project');
+END;
 
-DELIMITER $$
 CREATE TRIGGER check_member_has_project_faculty
 AFTER INSERT ON FACULTY
 FOR EACH ROW
+WHEN (SELECT COUNT(*) FROM WORK_ON WHERE memID = NEW.memID) = 0
 BEGIN
-    DECLARE project_count INT;
-    SELECT COUNT(*) INTO project_count 
-    FROM WORK_ON 
-    WHERE memID = NEW.memID;
-    
-    IF project_count = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Member must be assigned to at least one project';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'Member must be assigned to at least one project');
+END;
 
-DELIMITER $$
 CREATE TRIGGER check_member_has_project_extcollab
 AFTER INSERT ON EXTCOLLAB
 FOR EACH ROW
+WHEN (SELECT COUNT(*) FROM WORK_ON WHERE memID = NEW.memID) = 0
 BEGIN
-    DECLARE project_count INT;
-    SELECT COUNT(*) INTO project_count 
-    FROM WORK_ON 
-    WHERE memID = NEW.memID;
-    
-    IF project_count = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Member must be assigned to at least one project';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'Member must be assigned to at least one project');
+END;
 
-DELIMITER $$
 CREATE TRIGGER work_on_before_delete
 BEFORE DELETE ON WORK_ON
 FOR EACH ROW
+WHEN (SELECT COUNT(*) FROM WORK_ON WHERE memID = OLD.memID) <= 1
 BEGIN
-    DECLARE cnt INT;
-    SELECT COUNT(*) INTO cnt FROM WORK_ON WHERE memID = OLD.memID;
-    IF cnt <= 1 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Member must be assigned to at least one project';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'Member must be assigned to at least one project');
+END;
 
-DELIMITER $$
 CREATE TRIGGER uses_before_insert
 BEFORE INSERT ON USES
 FOR EACH ROW
-BEGIN
-    DECLARE cnt INT;
-    SELECT COUNT(DISTINCT u.memID) INTO cnt
+WHEN (
+    SELECT COUNT(DISTINCT u.memID) 
     FROM USES u
     WHERE u.equipID = NEW.equipID
-      AND NOT (u.endDate < NEW.startDate OR u.startDate > NEW.endDate);
-    IF cnt >= 3 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Equipment already in use by 3 members during that interval';
-    END IF;
-END$$
-DELIMITER ;
+      AND NOT (u.endDate < NEW.startDate OR u.startDate > NEW.endDate)
+) >= 3
+BEGIN
+    SELECT RAISE(ABORT, 'Equipment already in use by 3 members during that interval');
+END;
 
-DELIMITER $$
 CREATE TRIGGER uses_before_update
 BEFORE UPDATE ON USES
 FOR EACH ROW
-BEGIN
-    DECLARE cnt INT;
-    SELECT COUNT(DISTINCT u.memID) INTO cnt
+WHEN (
+    SELECT COUNT(DISTINCT u.memID) 
     FROM USES u
     WHERE u.equipID = NEW.equipID
       AND NOT (u.memID = OLD.memID AND u.equipID = OLD.equipID AND u.startDate = OLD.startDate)
-      AND NOT (u.endDate < NEW.startDate OR u.startDate > NEW.endDate);
-    IF cnt >= 3 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Equipment already in use by 3 members during that interval';
-    END IF;
-END$$
-DELIMITER ;
+      AND NOT (u.endDate < NEW.startDate OR u.startDate > NEW.endDate)
+) >= 3
+BEGIN
+    SELECT RAISE(ABORT, 'Equipment already in use by 3 members during that interval');
+END;
 
-DELIMITER $$
 CREATE TRIGGER publication_must_have_author
 AFTER DELETE ON AUTHORED_BY
 FOR EACH ROW
+WHEN (SELECT COUNT(*) FROM AUTHORED_BY WHERE pubID = OLD.pubID) = 0
 BEGIN
-    DECLARE author_count INT;
-    SELECT COUNT(*) INTO author_count 
-    FROM AUTHORED_BY 
-    WHERE pubID = OLD.pubID;
-    IF author_count = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Publication must have at least one author';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'Publication must have at least one author');
+END;
 
-DELIMITER $$
 CREATE TRIGGER grant_must_fund_project
 AFTER DELETE ON FUNDED_BY
 FOR EACH ROW
+WHEN (SELECT COUNT(*) FROM FUNDED_BY WHERE grantID = OLD.grantID) = 0
 BEGIN
-    DECLARE project_count INT;
-    SELECT COUNT(*) INTO project_count 
-    FROM FUNDED_BY 
-    WHERE grantID = OLD.grantID;
-    IF project_count = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Grant must fund at least one project';
-    END IF;
-END$$
-DELIMITER ;
+    SELECT RAISE(ABORT, 'Grant must fund at least one project');
+END;

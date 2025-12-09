@@ -3,12 +3,12 @@ VALUES
 ('Alice', 'Johnson', '2015-09-01', 'f1234', NULL, NULL, NULL),
 ('Robert', 'Chen', '2017-01-15', 'f7788', NULL, NULL, NULL),
 ('Maria', 'Rodriguez', '2018-08-20', 'f9876', NULL, NULL, NULL),
-('David', 'Kim', '2019-03-10', 'f5555', NULL, NULL, NULL);
+('David', 'Kim', '2019-03-10', 'f5555', NULL, NULL, NULL),
 ('Emily', 'Watson', '2022-09-01', 's3321', NULL, NULL, NULL),
 ('Michael', 'Brown', '2021-09-01', 's4564', NULL, NULL, NULL),
 ('Sarah', 'Davis', '2023-01-15', 's6399', NULL, NULL, NULL),
 ('James', 'Wilson', '2020-09-01', 's1352', NULL, NULL, NULL),
-('Lisa', 'Martinez', '2023-09-01', 's4756', NULL, NULL, NULL);
+('Lisa', 'Martinez', '2023-09-01', 's4756', NULL, NULL, NULL),
 ('Dr. John', 'Smith', '2020-06-01', 'e1212', NULL, NULL, NULL),
 ('Dr. Emma', 'Thompson', '2021-03-15', 'e9034', NULL, NULL, NULL),
 ('Dr. Alan', 'Zhang', '2022-11-01', 'e0036', NULL, NULL, NULL);
@@ -30,14 +30,14 @@ VALUES
 ('f7788', 'p2378', 'Lead', 10),
 ('f9876', 'p5912', 'Lead', 20),
 ('f5555', 'p8035', 'Lead', 15),
-('f9876', 'p0992', 'Collaborator', 5);
+('f9876', 'p0992', 'Collaborator', 5),
 ('s3321', 'p0992', 'Research Asst', 20),
 ('s3321', 'p4633', 'Research Asst', 10),
 ('s4564', 'p2221', 'PhD Researcher', 30),
 ('s6399', 'p0992', 'Research Asst', 15),
 ('s1352', 'p5912', 'Research Asst', 20),
 ('s1352', 'p8035', 'Research Asst', 15),
-('s4756', 'p4633', 'Research Asst', 10);
+('s4756', 'p4633', 'Research Asst', 10),
 ('e1212', 'p0992', 'Consultant', 10),
 ('e9034', 'p2221', 'Advisor', 8),
 ('e0036', 'p5912', 'Consultant', 12);
@@ -112,7 +112,7 @@ VALUES
 ('s1352', 'eq691', 'Simulation runs', '2024-01-01', '2024-12-31'),
 ('s1352', 'eq787', 'Testing robot algorithms', '2024-02-01', '2024-12-31'),
 ('f9876', 'eq787', 'Research experiments', '2024-02-01', '2024-12-31'),
-('s1352', 'eq423', 'Prototype fabrication', '2024-03-01', '2024-12-31');
+('s1352', 'eq423', 'Prototype fabrication', '2024-03-01', '2024-12-31'),
 ('s3321', 'eq523', 'Previous project work', '2023-01-01', '2023-12-31'),
 ('s4564', 'eq691', 'Initial experiments', '2023-06-01', '2023-12-31');
 
