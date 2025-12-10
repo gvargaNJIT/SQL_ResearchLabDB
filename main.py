@@ -17,7 +17,7 @@ class Database:
         try:
             sql = f"SELECT * FROM {table_name} WHERE {pk_name} = ?"
             self.cursor.execute(sql, (pk_value,))
-            row = self.cursor.fetchone()
+            row = self.cursor.fetchall()
         
             if row is None:
                 print("No matching record found.")
@@ -26,7 +26,9 @@ class Database:
             columns = [desc[0] for desc in self.cursor.description]
             print("" + " | ".join(columns))
             print("-" * 50)
-            print(" | ".join(str(v) if v is not None else "NULL" for v in row))
+            for r in row:
+                print(" | ".join(str(v) if v is not None else "NULL" for v in r))
+
 
             if table_name.upper() == "MEMBER":
                 mem_id = row[columns.index("memID")]
@@ -362,15 +364,20 @@ class Database:
                 grantID = input("> ").strip()
 
                 try:
-                    sql = ""
+                    sql = """SELECT DISTINCT m.memID, m.fName, m.lName, w.projID
+                        FROM MEMBER m
+                        JOIN WORK_ON w ON m.memID = w.memID
+                        JOIN FUNDED_BY f ON w.projID = f.projID
+                        WHERE f.grantID = ?
+                    """
                     self.cursor.execute(sql, (grantID,))
                     rows = self.cursor.fetchall()
                     if not rows:
                         print(f"No grant found with ID {grantID}.")
                     else:
                         for row in rows:
-                            projID, member = row
-                            print(f"Grant {grantID} funding Project {projID} Member: {member}")
+                            memID, fName, lName ,projID = row
+                            print(f"Grant {grantID} funding Project {projID} with Member {memID}: {fName} {lName}")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
@@ -379,15 +386,20 @@ class Database:
                 projID = input("> ").strip()
 
                 try:
-                    sql = ""
+                    sql = """SELECT m1.fName, m1.lName, m2.fName, m2.lName
+                        FROM WORK_ON w1
+                        JOIN MEMBER m1 ON w1.memID = m1.memID
+                        JOIN MEMBER m2 ON m1.mentorID = m2.memID
+                        WHERE w1.projID = ?
+                        """
                     self.cursor.execute(sql, (projID,))
                     rows = self.cursor.fetchall()
                     if not rows:
                         print(f"No mentorships with the members found with the same ID {projID}.")
                     else:
                         for row in rows:
-                            mentor, mentee = row
-                            print(f"Project {projID} shares member {mentor} who mentors {mentee}")
+                            menteef, menteel, mentorf, mentorl = row
+                            print(f"Project {projID} shares {mentorf} {mentorl} who mentors {menteef} {menteel}")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
@@ -458,7 +470,29 @@ class Database:
                 columnID = input("> ").strip()
                 print(f"In {columnID}, what value would you like to query:")
                 valueID = input("> ").strip()
-                self.execute_query(table_name='USES', pk_name=columnID, pk_value=valueID)
+                print("Would you like all time or currently in use now (all/now):")
+                curr = input("> ").strip()
+                if curr == 'all':
+                    self.execute_query(table_name='USES', pk_name=columnID, pk_value=valueID)
+                elif curr == 'now':
+                    sql = f""" SELECT *
+                            FROM USES
+                            WHERE {columnID} = ?
+                            AND endDate IS NULL
+                        """
+                    self.cursor.execute(sql, (valueID,))
+                    rows = self.cursor.fetchall()
+
+                    if not rows:
+                        print("No current usage found.")
+                    else:
+                        columns = [desc[0] for desc in self.cursor.description]
+                        print(" | ".join(columns))
+                        print("-" * 50)
+                        for r in rows:
+                            print(" | ".join(str(v) if v is not None else "NULL" for v in r))
+                else:
+                    print("Incorrect command")
 
             elif query == "6":
                 self.execute_insert(table_name='USES')
@@ -491,7 +525,10 @@ class Database:
                 equipID = input("> ").strip()
     
                 try:
-                    sql = "SELECT status FROM EQUIPMENT WHERE equipID = ?"
+                    sql = """SELECT status
+                            FROM EQUIPMENT
+                            WHERE equipID = ?;
+                            """
                     self.cursor.execute(sql, (equipID,))
                     row = self.cursor.fetchone()
         
@@ -509,15 +546,22 @@ class Database:
                 equipID = input("> ").strip()
 
                 try:
-                    sql = ""
+                    sql = """
+                        SELECT M.memID, projID
+                        FROM USES U
+                        JOIN MEMBER M ON M.memID = U.memID
+                        LEFT JOIN WORK_ON W ON W.memID = M.memID
+                        WHERE U.equipID = ?
+                        AND CURRENT_DATE BETWEEN U.startDate AND U.endDate;
+                    """
                     self.cursor.execute(sql, (equipID,))
                     rows = self.cursor.fetchall()
                     if not rows:
                         print(f"No equipment found with ID {equipID}.")
                     else:
                         for row in rows:
-                            projID, member = row
-                            print(f"Member {member} on project {projID} is using equipment {equipID}")
+                            memID, projID = row
+                            print(f"Member {memID} on project {projID} is using equipment {equipID}")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
@@ -545,7 +589,16 @@ class Database:
                 num = input("> ").strip()
 
                 try:
-                    sql = ""
+                    sql = """ SELECT M.fName, M.lName, Pub.pubCount
+                                FROM MEMBER M
+                                JOIN (
+                                SELECT memID, COUNT(pubID) AS pubCount
+                                FROM AUTHORED_BY
+                                GROUP BY memID
+                                ) AS Pub ON M.memID = Pub.memID
+                                ORDER BY Pub.pubCount DESC
+                                LIMIT ?;
+                        """
                     self.cursor.execute(sql, (num,))
                     rows = self.cursor.fetchall()
 
@@ -553,25 +606,31 @@ class Database:
                         print("No members found.")
                     else:
                         for row in rows:
-                            member_name, pub_count = row
-                            print(f"{member_name} has {pub_count} publications")
+                            fName, lName, pubCount = row
+                            print(f"{fName} {lName} has {pubCount} publications")
 
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
             elif query == "2":
-                print("Which major would you like the average students from:")
-                major = input("> ").strip()
                 try:
-                    sql = ""
+                    sql = """SELECT major, AVG(pubCount) AS avgPublications
+                            FROM (
+                                SELECT S.major, COUNT(A.pubID) AS pubCount
+                                FROM STUDENT S
+                                LEFT JOIN AUTHORED_BY A ON A.memID = S.memID
+                                GROUP BY S.studentNo, S.major
+                            ) AS StudentCounts
+                            GROUP BY major;
+                            """
                     self.cursor.execute(sql)
                     rows = self.cursor.fetchall()
                     if not rows:
                         print("No data found.")
                     else:
                         for row in rows:
-                            avg_pub = row
-                            print(f"Major {major} has an average of {avg_pub} student publications")
+                            major, avgPublications = row
+                            print(f"Major {major} has an average of {avgPublications} student publications")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
@@ -581,15 +640,20 @@ class Database:
                 print("Enter end date (YYYY-MM-DD):")
                 end_date = input("> ").strip()
                 try:
-                    sql = ""
+                    sql = """SELECT COUNT(DISTINCT p.projID)
+                        FROM PROJECT p
+                        JOIN FUNDED_BY f ON p.projID = f.projID
+                        WHERE p.statusProj = 'active'
+                        AND NOT (p.endDate < ? OR p.startDate > ?);
+                    """
                     self.cursor.execute(sql, (start_date, end_date))
-                    rows = self.cursor.fetchall()
+                    rows = self.cursor.fetchone()
                     if not rows:
                         print("No projects found.")
                     else:
                         for row in rows:
-                            projID, grantID = row
-                            print(f"Project {projID} was funded by grant {grantID}")
+                            num = row
+                            print(f"{num} project(s) was/were funded by a grant between {start_date} and {end_date}")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
@@ -597,15 +661,25 @@ class Database:
                 print("Enter grant ID:")
                 grantID = input("> ").strip()
                 try:
-                    sql = ""
+                    sql = """
+                        SELECT m.memID, m.fName, m.lName, COUNT(a.pubID) AS pub_count
+                        FROM MEMBER m
+                        JOIN WORK_ON w ON m.memID = w.memID
+                        JOIN FUNDED_BY f ON w.projID = f.projID
+                        LEFT JOIN AUTHORED_BY a ON m.memID = a.memID
+                        WHERE f.grantID = ?
+                        GROUP BY m.memID
+                        ORDER BY pub_count DESC
+                        LIMIT 3 
+                        """
                     self.cursor.execute(sql, (grantID,))
                     rows = self.cursor.fetchall()
                     if not rows:
                         print("No members found.")
                     else:
                         for row in rows:
-                            member_name, pub_count = row
-                            print(f"Member {member_name} contributed to projects funded by grant {grantID} ({pub_count} publications)")
+                            memID, memberf, memberl, pub_count = row
+                            print(f"Member {memberf} {memberl} ({memID}) contributed to projects funded by grant {grantID} ({pub_count} publications)")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 

@@ -105,14 +105,14 @@ VALUES
 
 INSERT INTO USES (memID, equipID, purpose, startDate, endDate) 
 VALUES 
-('s3321', 'eq523', 'Training ML models', '2024-01-01', '2024-12-31'),
-('s4564', 'eq523', 'Quantum simulations', '2024-01-01', '2024-12-31'),
-('f1234', 'eq523', 'Model testing', '2024-01-01', '2024-06-30'),
-('s6399', 'eq691', 'Data processing', '2024-01-01', '2024-12-31'),
-('s1352', 'eq691', 'Simulation runs', '2024-01-01', '2024-12-31'),
-('s1352', 'eq787', 'Testing robot algorithms', '2024-02-01', '2024-12-31'),
-('f9876', 'eq787', 'Research experiments', '2024-02-01', '2024-12-31'),
-('s1352', 'eq423', 'Prototype fabrication', '2024-03-01', '2024-12-31'),
+('s3321', 'eq523', 'Training ML models', '2024-01-01', NULL),
+('s4564', 'eq523', 'Quantum simulations', '2024-01-01', NULL),
+('f1234', 'eq523', 'Model testing', '2024-01-01', NULL),
+('s6399', 'eq691', 'Data processing', '2024-01-01', NULL),
+('s1352', 'eq691', 'Simulation runs', '2024-01-01', NULL),
+('s1352', 'eq787', 'Testing robot algorithms', '2024-02-01', NULL),
+('f9876', 'eq787', 'Research experiments', '2024-02-01', NULL),
+('s1352', 'eq423', 'Prototype fabrication', '2024-03-01', NULL),
 ('s3321', 'eq523', 'Previous project work', '2023-01-01', '2023-12-31'),
 ('s4564', 'eq691', 'Initial experiments', '2023-06-01', '2023-12-31');
 

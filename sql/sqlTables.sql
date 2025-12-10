@@ -7,7 +7,7 @@ mentorID CHAR(5),
 mentorStartDate DATE,
 mentorEndDate DATE,
 PRIMARY KEY (memID),
-CHECK (memID REGEXP '^[fse][0-9]{4}$'),
+CHECK (memID LIKE 'f____' OR memID LIKE 's____' OR memID LIKE 'e____'),
 CHECK (mentorStartDate IS NULL OR 
        mentorEndDate IS NULL OR 
        mentorStartDate <= mentorEndDate),
@@ -114,7 +114,7 @@ CREATE TABLE USES (
     equipID CHAR(5) NOT NULL,
     purpose VARCHAR(50) NOT NULL,
     startDate DATE NOT NULL,
-    endDate DATE NOT NULL,
+    endDate DATE,
     PRIMARY KEY (memID, equipID, startDate),
     CONSTRAINT FK_Uses_Member
         FOREIGN KEY (memID) REFERENCES MEMBER(memID)
@@ -129,8 +129,8 @@ CREATE TABLE PUBLICATION (
     publicationDate DATE NOT NULL,
     title VARCHAR(100) NOT NULL,
     venue VARCHAR(50) NOT NULL,
-    month TINYINT NOT NULL,
-    year SMALLINT NOT NULL,
+    month TINYINT,
+    year SMALLINT,
     DOI VARCHAR(100) DEFAULT NULL,
     CHECK (month BETWEEN 1 AND 12),
     CHECK (year >= 1900)
@@ -285,3 +285,12 @@ BEGIN
     WHERE equipID = OLD.equipID;
 END;
 
+CREATE TRIGGER pub_fill_after_insert
+AFTER INSERT ON PUBLICATION
+FOR EACH ROW
+BEGIN
+    UPDATE PUBLICATION
+    SET month = CAST(strftime('%m', NEW.publicationDate) AS INTEGER),
+        year = CAST(strftime('%Y', NEW.publicationDate) AS INTEGER)
+    WHERE pubID = NEW.pubID;
+END;
