@@ -97,10 +97,10 @@ VALUES
 INSERT INTO EQUIPMENT (equipID, name, type, purchaseDate, status) 
 VALUES 
 ('eq523', 'GPU Server 1', 'Computing', '2022-01-15', 'In Use'),
-('eq691', 'GPU Server 2', 'Computing', '2022-01-15', 'In Use'),
+('eq691', 'GPU Server 2', 'Computing', '2022-01-15', 'Available'),
 ('eq787', 'Robot Arm', 'Robotics', '2023-03-10', 'Available'),
 ('eq556', 'Microscope', 'Lab Equipment', '2021-06-20', 'Available'),
-('eq423', '3D Printer', 'Fabrication', '2023-09-01', 'In Use'),
+('eq423', '3D Printer', 'Fabrication', '2023-09-01', 'Available'),
 ('eq908', 'Oscilloscope', 'Electronics', '2020-11-15', 'Retired');
 
 INSERT INTO USES (memID, equipID, purpose, startDate, endDate) 

@@ -63,7 +63,7 @@ CHECK (startDate IS NULL OR
        startDate <= endDate),
 CONSTRAINT proj_leader_FK
         FOREIGN KEY (memID) REFERENCES FACULTY(memID)
-        ON DELETE NO ACTION
+        ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
@@ -72,8 +72,8 @@ CREATE TABLE WORK_ON
 projID CHAR(5) NOT NULL,
 roleWO VARCHAR(15),
 weeklyHours INT,
-FOREIGN KEY (memID) REFERENCES MEMBER(memID),
-FOREIGN KEY (projID) REFERENCES PROJECT(projID),
+FOREIGN KEY (memID) REFERENCES MEMBER(memID) ON DELETE CASCADE,
+FOREIGN KEY (projID) REFERENCES PROJECT(projID) ON DELETE CASCADE,
 PRIMARY KEY (memID, projID),
 CHECK (weeklyHours >= 0)
 );
@@ -206,14 +206,6 @@ BEGIN
     SELECT RAISE(ABORT, 'Member must be assigned to at least one project');
 END;
 
-CREATE TRIGGER work_on_before_delete
-BEFORE DELETE ON WORK_ON
-FOR EACH ROW
-WHEN (SELECT COUNT(*) FROM WORK_ON WHERE memID = OLD.memID) <= 1
-BEGIN
-    SELECT RAISE(ABORT, 'Member must be assigned to at least one project');
-END;
-
 CREATE TRIGGER uses_before_insert
 BEFORE INSERT ON USES
 FOR EACH ROW
@@ -256,3 +248,40 @@ WHEN (SELECT COUNT(*) FROM FUNDED_BY WHERE grantID = OLD.grantID) = 0
 BEGIN
     SELECT RAISE(ABORT, 'Grant must fund at least one project');
 END;
+
+CREATE TRIGGER update_equipment_status_after_insert
+AFTER INSERT ON USES
+FOR EACH ROW
+BEGIN
+    UPDATE EQUIPMENT
+    SET status = CASE
+        WHEN (SELECT COUNT(*) FROM USES WHERE equipID = NEW.equipID) = 3 THEN 'In Use'
+        ELSE 'Available'
+    END
+    WHERE equipID = NEW.equipID;
+END;
+
+CREATE TRIGGER update_equipment_status_after_update
+AFTER UPDATE ON USES
+FOR EACH ROW
+BEGIN
+    UPDATE EQUIPMENT
+    SET status = CASE
+        WHEN (SELECT COUNT(*) FROM USES WHERE equipID = NEW.equipID) = 3 THEN 'In Use'
+        ELSE 'Available'
+    END
+    WHERE equipID = NEW.equipID;
+END;
+
+CREATE TRIGGER update_equipment_status_after_delete
+AFTER DELETE ON USES
+FOR EACH ROW
+BEGIN
+    UPDATE EQUIPMENT
+    SET status = CASE
+        WHEN (SELECT COUNT(*) FROM USES WHERE equipID = OLD.equipID) = 3 THEN 'In Use'
+        ELSE 'Available'
+    END
+    WHERE equipID = OLD.equipID;
+END;
+
