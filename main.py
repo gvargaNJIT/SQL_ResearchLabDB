@@ -369,15 +369,24 @@ class Database:
                         JOIN WORK_ON w ON m.memID = w.memID
                         JOIN FUNDED_BY f ON w.projID = f.projID
                         WHERE f.grantID = ?
+                        ORDER BY w.projID, m.lName, m.fName
                     """
                     self.cursor.execute(sql, (grantID,))
                     rows = self.cursor.fetchall()
                     if not rows:
                         print(f"No grant found with ID {grantID}.")
                     else:
+                        print(f"\nGrant {grantID} is funding the following projects:\n")
+            
+                        current_project = None
                         for row in rows:
-                            memID, fName, lName ,projID = row
-                            print(f"Grant {grantID} funding Project {projID} with Member {memID}: {fName} {lName}")
+                            memID, fName, lName, projID = row
+                            if projID != current_project:
+                                if current_project is not None:
+                                    print()
+                                print(f"Project {projID}:")
+                                current_project = projID
+                            print(f"  - {fName} {lName} ({memID})")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
@@ -547,21 +556,29 @@ class Database:
 
                 try:
                     sql = """
-                        SELECT M.memID, projID
+                        SELECT M.memID, M.fName, M.lName, W.projID
                         FROM USES U
                         JOIN MEMBER M ON M.memID = U.memID
                         LEFT JOIN WORK_ON W ON W.memID = M.memID
                         WHERE U.equipID = ?
-                        AND CURRENT_DATE BETWEEN U.startDate AND U.endDate;
+                        AND U.startDate <= CURRENT_DATE
+                        AND (U.endDate IS NULL OR U.endDate >= CURRENT_DATE);
                     """
                     self.cursor.execute(sql, (equipID,))
                     rows = self.cursor.fetchall()
                     if not rows:
                         print(f"No equipment found with ID {equipID}.")
                     else:
+                        current_member = None
                         for row in rows:
-                            memID, projID = row
-                            print(f"Member {memID} on project {projID} is using equipment {equipID}")
+                            memID, fName, lName, projID = row
+                            if memID != current_member:
+                                print(f"\n{fName} {lName} ({memID}):")
+                                current_member = memID
+                            if projID:
+                                print(f"  - Project {projID}")
+                            else:
+                                print(f"  - Not currently assigned to any project")
                 except sqlite3.Error as e:
                     print(f"Query error: {e}")
 
@@ -644,7 +661,8 @@ class Database:
                         FROM PROJECT p
                         JOIN FUNDED_BY f ON p.projID = f.projID
                         WHERE p.statusProj = 'active'
-                        AND NOT (p.endDate < ? OR p.startDate > ?);
+                        AND (p.endDate IS NULL OR p.endDate >= ?)
+                        AND p.startDate <= ?;
                     """
                     self.cursor.execute(sql, (start_date, end_date))
                     rows = self.cursor.fetchone()
