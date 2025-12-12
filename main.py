@@ -400,7 +400,9 @@ class Database:
                         FROM WORK_ON w1
                         JOIN MEMBER m1 ON w1.memID = m1.memID
                         JOIN MEMBER m2 ON m1.mentorID = m2.memID
-                        WHERE w1.projID = ?
+                        JOIN WORK_ON w2 ON w2.memID = m2.memID AND w2.projID = w1.projID
+                        WHERE w1.projID = w2.projID 
+                        AND w1.projID = ?
                         """
                     self.cursor.execute(sql, (projID,))
                     rows = self.cursor.fetchall()
