@@ -711,13 +711,13 @@ class Database:
         print("Research Lab Database")
         print("-" * 50)
         print("")
-        print("Press the number of the menu you want:")
-        print("1: Project and Member Management")
-        print("2: Equipment Usage Tracking")
-        print("3: Grant and Publication Reporting")
-        print("0: Exit program")
         
         while True:
+            print("Press the number of the menu you want:")
+            print("1: Project and Member Management")
+            print("2: Equipment Usage Tracking")
+            print("3: Grant and Publication Reporting")
+            print("0: Exit program")
             try:
                 command = input("Enter menu: ").strip().lower()
                 
