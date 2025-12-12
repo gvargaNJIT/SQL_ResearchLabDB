@@ -61,6 +61,7 @@ class Database:
 
     def execute_insert(self, table_name):
         try:
+            print("For NULL statements, just press enter/leave blank.")
             self.cursor.execute(f"PRAGMA table_info({table_name})")
             cols_info = self.cursor.fetchall()
             if not cols_info:
